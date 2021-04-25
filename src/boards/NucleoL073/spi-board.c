@@ -87,7 +87,7 @@ void SpiDeInit( Spi_t *obj )
     GpioInit( &obj->Nss, obj->Nss.pin, PIN_OUTPUT, PIN_PUSH_PULL, PIN_PULL_UP, 1 );
 }
 
-void SpiFormat( Spi_t *obj, int8_t bits, int8_t cpol, int8_t cpha, int8_t slave )
+void SpiFormat( Spi_t *obj, uint32_t bits, int8_t cpol, int8_t cpha, int8_t slave )
 {
     SpiHandle[obj->SpiId].Init.Direction = SPI_DIRECTION_2LINES;
     if( bits == SPI_DATASIZE_8BIT )

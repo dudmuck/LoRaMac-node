@@ -38,7 +38,7 @@ set(SECURE_ELEMENT SOFT_SE CACHE STRING "Default secure element is SOFT_SE")
 set_property(CACHE SECURE_ELEMENT PROPERTY STRINGS ${SECURE_ELEMENT_LIST})
 
 # Allow switching of Applications
-set(APPLICATION_LIST LoRaMac ping-pong rx-sensi tx-cw )
+set(APPLICATION_LIST LoRaMac ping-pong rx-sensi tx-cw simple-tx)
 set(APPLICATION LoRaMac CACHE STRING "Default Application is LoRaMac")
 set_property(CACHE APPLICATION PROPERTY STRINGS ${APPLICATION_LIST})
 
@@ -74,18 +74,21 @@ elseif(BOARD STREQUAL NucleoL073)
     # Build platform specific board implementation
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NucleoL073)
 
-    # Configure radio
-    if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
-        set(RADIO sx1272 CACHE INTERNAL "Radio sx1272 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1276MB1LAS OR MBED_RADIO_SHIELD STREQUAL SX1276MB1MAS)
-        set(RADIO sx1276 CACHE INTERNAL "Radio sx1276 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1261MBXBAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXCAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXDAS)
-        set(RADIO sx126x CACHE INTERNAL "Radio sx126x selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL LR1110MB1XXS)
-        set(RADIO lr1110 CACHE INTERNAL "Radio lr1110 selected")
-    else()
-        message(STATUS "Please specify the MBED_RADIO_SHIELD!\nPossible values are: SX1272MB2DAS, SX1276MB1LAS, SX1276MB1MAS, SX1261MBXBAS, SX1262MBXCAS, SX1262MBXDAS and LR1110MB1XXS.")
-    endif()
+elseif(BOARD STREQUAL NUCLEO-L031K6)
+    # Configure toolchain for NUCLEO-L031K6
+    set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-L031K6/cmsis/arm-gcc/stm32l031k6_flash.ld)
+    include(stm32l0)
+
+    # Build platform specific board implementation
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-L031K6)
+
+elseif(BOARD STREQUAL NUCLEO-G071RB)
+    # Configure toolchain for NUCLEO-G071RB
+    set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G071RB/cmsis/arm-gcc/stm32g071xx_flash.ld)
+    include(stm32g0)
+
+    # Build platform specific board implementation
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G071RB)
 
 elseif(BOARD STREQUAL NucleoL152)
     # Configure toolchain for NucleoL152
@@ -95,19 +98,6 @@ elseif(BOARD STREQUAL NucleoL152)
     # Build platform specific board implementation
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NucleoL152)
 
-    # Configure radio
-    if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
-        set(RADIO sx1272 CACHE INTERNAL "Radio sx1272 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1276MB1LAS OR MBED_RADIO_SHIELD STREQUAL SX1276MB1MAS)
-        set(RADIO sx1276 CACHE INTERNAL "Radio sx1276 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1261MBXBAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXCAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXDAS)
-        set(RADIO sx126x CACHE INTERNAL "Radio sx126x selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL LR1110MB1XXS)
-        set(RADIO lr1110 CACHE INTERNAL "Radio lr1110 selected")
-    else()
-        message(STATUS "Please specify the MBED_RADIO_SHIELD!\nPossible values are: SX1272MB2DAS, SX1276MB1LAS, SX1276MB1MAS, SX1261MBXBAS, SX1262MBXCAS, SX1262MBXDAS and  LR1110MB1XXS.")
-    endif()
-
 elseif(BOARD STREQUAL NucleoL476)
     # Configure toolchain for NucleoL476
     set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NucleoL476/cmsis/arm-gcc/stm32l476rgtx_flash.ld)
@@ -115,19 +105,6 @@ elseif(BOARD STREQUAL NucleoL476)
 
     # Build platform specific board implementation
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NucleoL476)
-
-    # Configure radio
-    if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
-        set(RADIO sx1272 CACHE INTERNAL "Radio sx1272 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1276MB1LAS OR MBED_RADIO_SHIELD STREQUAL SX1276MB1MAS)
-        set(RADIO sx1276 CACHE INTERNAL "Radio sx1276 selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL SX1261MBXBAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXCAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXDAS)
-        set(RADIO sx126x CACHE INTERNAL "Radio sx126x selected")
-    elseif(MBED_RADIO_SHIELD STREQUAL LR1110MB1XXS)
-        set(RADIO lr1110 CACHE INTERNAL "Radio lr1110 selected")
-    else()
-        message(STATUS "Please specify the MBED_RADIO_SHIELD!\nPossible values are: SX1272MB2DAS, SX1276MB1LAS, SX1276MB1MAS, SX1261MBXBAS, SX1262MBXCAS, SX1262MBXDAS and  LR1110MB1XXS.")
-    endif()
 
 elseif(BOARD STREQUAL SAMR34)
     # Configure toolchain for SAMR34
@@ -185,17 +162,30 @@ elseif(BOARD STREQUAL B-L072Z-LRWAN1)
     set(RADIO sx1276 CACHE INTERNAL "Radio sx1276 selected")
 endif()
 
+if(NOT DEFINED RADIO)
+    #Configure radio
+    if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
+        set(RADIO sx1272 CACHE INTERNAL "Radio sx1272 selected")
+    elseif(MBED_RADIO_SHIELD STREQUAL SX1276MB1LAS OR MBED_RADIO_SHIELD STREQUAL SX1276MB1MAS)
+        set(RADIO sx1276 CACHE INTERNAL "Radio sx1276 selected")
+    elseif(MBED_RADIO_SHIELD STREQUAL SX1261MBXBAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXCAS OR MBED_RADIO_SHIELD STREQUAL SX1262MBXDAS)
+        set(RADIO sx126x CACHE INTERNAL "Radio sx126x selected")
+    elseif(MBED_RADIO_SHIELD STREQUAL LR1110MB1XXS)
+        set(RADIO lr1110 CACHE INTERNAL "Radio lr1110 selected")
+    endif()
+endif()
 #---------------------------------------------------------------------------------------
 # General Components
 #---------------------------------------------------------------------------------------
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards)
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/radio)
+if(DEFINED RADIO)
+    message("RADIO defined ${RADIO}")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/radio)
+endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/system)
-
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mac)
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/peripherals)
 
@@ -203,20 +193,36 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/peripherals)
 # Applications
 #---------------------------------------------------------------------------------------
 
+set (RADIO_REQUIRED FALSE)
+
 if(APPLICATION STREQUAL LoRaMac)
-
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/mac)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/LoRaMac)
-
+    set (RADIO_REQUIRED TRUE)
 elseif(APPLICATION STREQUAL ping-pong)
-
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/ping-pong)
-
+    set (RADIO_REQUIRED TRUE)
 elseif(APPLICATION STREQUAL rx-sensi)
-
+    set (RADIO_REQUIRED TRUE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/rx-sensi)
-
+    set (RADIO_REQUIRED TRUE)
 elseif(APPLICATION STREQUAL tx-cw)
-
+    set (RADIO_REQUIRED TRUE)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/tx-cw)
+    set (RADIO_REQUIRED TRUE)
+elseif(APPLICATION STREQUAL simple-tx)
+    set (RADIO_REQUIRED TRUE)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/simple-tx)
+    set (RADIO_REQUIRED TRUE)
+elseif(APPLICATION STREQUAL simple-rx)
+    set (RADIO_REQUIRED TRUE)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/simple-rx)
+elseif(APPLICATION STREQUAL led-blink)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/apps/led-blink)
+else()
+    message(FATAL_ERROR "unknown APPLICATION " ${APPLICATION})
+endif()
 
+if (RADIO_REQUIRED AND NOT DEFINED RADIO)
+    message(STATUS "BBB Please specify the MBED_RADIO_SHIELD!\nPossible values are: SX1272MB2DAS, SX1276MB1LAS, SX1276MB1MAS, SX1261MBXBAS, SX1262MBXCAS, SX1262MBXDAS and LR1110MB1XXS.")
 endif()

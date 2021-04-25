@@ -22,6 +22,7 @@ cmake_minimum_required(VERSION 3.6)
 # Target
 #---------------------------------------------------------------------------------------
 
+if(APPLICATION STREQUAL LoRaMac)
 if(${SECURE_ELEMENT} MATCHES SOFT_SE)
     file(GLOB ${PROJECT_NAME}_SOURCES "*.c" "soft-se/*.c")
 else()
@@ -45,6 +46,9 @@ else()
         message(FATAL_ERROR "No secure-element selected.")
     endif()
 endif()
+else()
+    file(GLOB ${PROJECT_NAME}_SOURCES "*.c")
+endif()
 
 add_library(${PROJECT_NAME} OBJECT EXCLUDE_FROM_ALL ${${PROJECT_NAME}_SOURCES})
 
@@ -52,6 +56,7 @@ if(${SECURE_ELEMENT_PRE_PROVISIONED} MATCHES ON)
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DSECURE_ELEMENT_PRE_PROVISIONED)
 endif()
 
+if(APPLICATION STREQUAL LoRaMac)
 if(${SECURE_ELEMENT} MATCHES SOFT_SE)
     target_include_directories( ${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/soft-se)
     target_compile_definitions(${PROJECT_NAME} PRIVATE -DSOFT_SE)
@@ -72,13 +77,17 @@ else()
         )
     endif()
 endif()
+endif()
 
 target_include_directories( ${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     $<TARGET_PROPERTY:board,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:system,INTERFACE_INCLUDE_DIRECTORIES>
-    $<TARGET_PROPERTY:mac,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:radio,INTERFACE_INCLUDE_DIRECTORIES>
 )
+
+if(APPLICATION STREQUAL LoRaMac)
+    target_include_directories( ${PROJECT_NAME} PUBLIC $<TARGET_PROPERTY:mac,INTERFACE_INCLUDE_DIRECTORIES>)
+endif()
 
 set_property(TARGET ${PROJECT_NAME} PROPERTY C_STANDARD 11)

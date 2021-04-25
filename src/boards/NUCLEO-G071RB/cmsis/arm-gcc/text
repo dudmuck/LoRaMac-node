@@ -1,0 +1,20 @@
+
+
+SX126xMB2xAS	MBED Pin
+SCK	D13             PA5
+MISO	D12         pA6
+MOSI	D11         pA7
+NSS	D7              pA8
+ANT_SW	D8          pA9
+DIO1	D5          pB4
+BUSY	D3          pB3
+XTAL_SEL1	A3      pB1
+DEVICE_SEL2	A2      pA4
+FREQ_SEL3	A1      pA1
+NRESET	A0          pA0
+D9	D9              p
+D10	D10             p
+I2C_SDA	D14         p
+I2C_SCL	D15         p
+A5	A4              p
+A6	A5              p

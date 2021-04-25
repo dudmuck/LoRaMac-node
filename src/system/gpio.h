@@ -69,6 +69,13 @@ typedef enum
     PIN_PULL_DOWN
 }PinTypes;
 
+typedef enum {
+    NONE_EDGE = 0,
+    RISING_EDGE,
+    FALLING_EDGE,
+    BOTH_EDGE
+} Edge;
+
 /*!
  * Define the GPIO as Push-pull type or Open Drain
  */
@@ -116,6 +123,7 @@ typedef struct
     void *port;
     uint16_t portIndex;
     PinTypes pull;
+    Edge edge;
     void* Context;
     GpioIrqHandler* IrqHandler;
 }Gpio_t;

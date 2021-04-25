@@ -23,6 +23,9 @@ enable_language(ASM)
 # Target
 #---------------------------------------------------------------------------------------
 
+set(HAL_DRIVER_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32CubeL0/Drivers")
+set(HAL_DRIVER_SRC "${HAL_DRIVER_DIR}/STM32L0xx_HAL_Driver/Src")
+
 list(APPEND ${PROJECT_NAME}_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/adc-board.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/board.c"
@@ -37,25 +40,25 @@ list(APPEND ${PROJECT_NAME}_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/utilities.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32l073xx.s"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/system_stm32l0xx.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_adc.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_adc_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_cortex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_dma.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_flash.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_flash_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_gpio.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_i2c.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_i2c_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_pwr.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_pwr_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rcc.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rcc_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rtc.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rtc_ex.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_spi.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_uart.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_uart_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_adc.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_adc_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_cortex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_dma.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_flash.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_flash_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_gpio.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_i2c.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_i2c_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_pwr.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_pwr_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_rcc.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_rcc_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_rtc.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_rtc_ex.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_spi.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_uart.c"
+    "${HAL_DRIVER_SRC}/stm32l0xx_hal_uart_ex.c"
 )
 
 if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
@@ -91,7 +94,8 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/cmsis
     ${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32
     ${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/cmsis
-    ${CMAKE_CURRENT_SOURCE_DIR}/../mcu/stm32/STM32L0xx_HAL_Driver/Inc
+    ${HAL_DRIVER_DIR}/STM32L0xx_HAL_Driver/Inc
+    ${HAL_DRIVER_DIR}/CMSIS/Device/ST/STM32L0xx/Include
     $<TARGET_PROPERTY:board,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:system,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:radio,INTERFACE_INCLUDE_DIRECTORIES>
