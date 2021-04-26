@@ -10,8 +10,9 @@ added applications:
 
 added boards:
 
-    -DBOARD="NUCLEO-G071RB" 
     -DBOARD="NUCLEO-L031K6" `
+    -DBOARD="NUCLEO-G071RB" 
+    -DBOARD="NUCLEO-G070RB" 
     
 already existing radio chips:
 

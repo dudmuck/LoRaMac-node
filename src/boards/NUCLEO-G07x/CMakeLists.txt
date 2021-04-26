@@ -15,7 +15,7 @@
 ## License:  Revised BSD License, see LICENSE.TXT file included in the project
 ## Authors:  Johannes Bruder (STACKFORCE), Miguel Luis (Semtech)
 ##
-project(NUCLEO-G071RB)
+project(${BOARD})
 cmake_minimum_required(VERSION 3.6)
 enable_language(ASM)
 
@@ -38,7 +38,6 @@ list(APPEND ${PROJECT_NAME}_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/delay-board.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/uart-board.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/gpio-board.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32g071rbtx.s"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/system_stm32g0xx.c"
     "${HAL_DRIVER_SRC}/stm32g0xx_hal.c"
     "${HAL_DRIVER_SRC}/stm32g0xx_hal_adc.c"
@@ -60,6 +59,16 @@ list(APPEND ${PROJECT_NAME}_SOURCES
     "${HAL_DRIVER_SRC}/stm32g0xx_hal_uart.c"
     "${HAL_DRIVER_SRC}/stm32g0xx_hal_uart_ex.c"
 )
+
+if (BOARD STREQUAL NUCLEO-G071RB)
+list(APPEND ${PROJECT_NAME}_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32g071rbtx.s"
+)
+elseif (BOARD STREQUAL NUCLEO-G070RB)
+list(APPEND ${PROJECT_NAME}_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32g070rbtx.s"
+)
+endif()
 
 if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
     list(APPEND ${PROJECT_NAME}_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sx1272mb2das-board.c")

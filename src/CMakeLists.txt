@@ -82,13 +82,17 @@ elseif(BOARD STREQUAL NUCLEO-L031K6)
     # Build platform specific board implementation
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-L031K6)
 
-elseif(BOARD STREQUAL NUCLEO-G071RB)
-    # Configure toolchain for NUCLEO-G071RB
-    set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G071RB/cmsis/arm-gcc/stm32g071xx_flash.ld)
+elseif(BOARD MATCHES NUCLEO-G0.+)
+    if (BOARD MATCHES NUCLEO-G07.+)
+        # Configure toolchain for NUCLEO-G071RB, or G070
+        set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G07x/cmsis/arm-gcc/stm32g07xxx_flash.ld)
+    else()
+        message(FATAL_ERROR "linker script for ${BOARD}")
+    endif()
     include(stm32g0)
 
     # Build platform specific board implementation
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G071RB)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G07x)
 
 elseif(BOARD STREQUAL NucleoL152)
     # Configure toolchain for NucleoL152
