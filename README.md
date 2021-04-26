@@ -4,21 +4,21 @@ These added examples are **not** LoRaWAN, instead they use LoRa transceiver chip
 
 added applications:
 
-    -DAPPLICATION="simple-tx" `
-    -DAPPLICATION="simple-rx" `
+    -DAPPLICATION="simple-tx"
+    -DAPPLICATION="simple-rx"
     -DAPPLICATION="led-blink" 
 
 added boards:
 
-    -DBOARD="NUCLEO-L031K6" `
+    -DBOARD="NUCLEO-L031K6"
     -DBOARD="NUCLEO-G071RB" 
     -DBOARD="NUCLEO-G070RB" 
     
 already existing radio chips:
 
-    -DMBED_RADIO_SHIELD="LR1110MB1XXS" `
-    -DMBED_RADIO_SHIELD="SX1262MBXCAS" `
-    -DMBED_RADIO_SHIELD="SX1261MBXBAS" `
+    -DMBED_RADIO_SHIELD="LR1110MB1XXS"
+    -DMBED_RADIO_SHIELD="SX1262MBXCAS"
+    -DMBED_RADIO_SHIELD="SX1261MBXBAS"
     
 if you're using STM32L0xx MCU:
 
