@@ -13,6 +13,7 @@ added boards:
     -DBOARD="NUCLEO-L031K6"
     -DBOARD="NUCLEO-G071RB" 
     -DBOARD="NUCLEO-G070RB" 
+    -DBOARD="NUCLEO-G031K8"
     
 already existing radio chips:
 

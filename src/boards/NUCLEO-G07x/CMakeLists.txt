@@ -68,6 +68,12 @@ elseif (BOARD STREQUAL NUCLEO-G070RB)
 list(APPEND ${PROJECT_NAME}_SOURCES
     "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32g070rbtx.s"
 )
+elseif (BOARD STREQUAL NUCLEO-G031K8)
+list(APPEND ${PROJECT_NAME}_SOURCES
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmsis/arm-gcc/startup_stm32g031k8tx.s"
+)
+else()
+    message(FATAL_ERROR "startup for board ${BOARD}")
 endif()
 
 if(MBED_RADIO_SHIELD STREQUAL SX1272MB2DAS)
@@ -90,7 +96,16 @@ endif()
 
 add_library(${PROJECT_NAME} OBJECT EXCLUDE_FROM_ALL ${${PROJECT_NAME}_SOURCES})
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC -DUSE_HAL_DRIVER -DSTM32G071xx -D${MBED_RADIO_SHIELD})
+target_compile_definitions(${PROJECT_NAME} PUBLIC -DUSE_HAL_DRIVER -D${MBED_RADIO_SHIELD})
+if (BOARD STREQUAL NUCLEO-G071RB)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC -DSTM32G071xx)
+elseif (BOARD STREQUAL NUCLEO-G070RB)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC -DSTM32G070xx)
+elseif (BOARD STREQUAL NUCLEO-G031K8)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC -DSTM32G031xx)
+else()
+    message(FATAL_ERROR "define for board ${BOARD}")
+endif()
 
 # Add define if debbuger support is enabled
 target_compile_definitions(${PROJECT_NAME} PUBLIC $<$<BOOL:${USE_DEBUGGER}>:USE_DEBUGGER>)

@@ -85,13 +85,16 @@ void SystemClockConfig(void)
   RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV4;
   RCC_OscInitStruct.PLL.PLLN = 70;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV10;
+#ifdef STM32G071xx
   RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV5;
+#endif /* devices that have PLLQ */
   RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV5;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     //Error_Handler();
     for (;;)
         asm("nop");
+    assert_param( LMN_STATUS_ERROR );
   }
   /** Initializes the CPU, AHB and APB buses clocks
   */
@@ -106,6 +109,7 @@ void SystemClockConfig(void)
     //Error_Handler();
     for (;;)
         asm("nop");
+    assert_param( LMN_STATUS_ERROR );
   }
 }
 
@@ -159,8 +163,10 @@ void BoardInitMcu( void )
         __HAL_RCC_SYSCFG_CLK_ENABLE();
         __HAL_RCC_PWR_CLK_ENABLE();
 
+#if defined (SYSCFG_CFGR1_UCPD1_STROBE) || defined (SYSCFG_CFGR1_UCPD2_STROBE)
         /** Disable the internal Pull-Up in Dead Battery pins of UCPD peripheral */
         HAL_SYSCFG_StrobeDBattpinsConfig(SYSCFG_CFGR1_UCPD1_STROBE | SYSCFG_CFGR1_UCPD2_STROBE);
+#endif /* SYSCFG_CFGR1_UCPD1_STROBE || SYSCFG_CFGR1_UCPD2_STROBE */
 
         // LEDs
         GpioInit( &Led1, LED_1, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 0 );
@@ -303,8 +309,10 @@ void LpmEnterStopMode( void)
 
     BoardDeInitMcu( );
 
+#ifdef PWR_PVD_SUPPORT
     // Disable the Power Voltage Detector
     HAL_PWR_DisablePVD( );
+#endif
 
     // Clear wake up flag
     //SET_BIT( PWR->CR, PWR_CR_CWUF );

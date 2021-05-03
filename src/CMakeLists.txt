@@ -84,8 +84,9 @@ elseif(BOARD STREQUAL NUCLEO-L031K6)
 
 elseif(BOARD MATCHES NUCLEO-G0.+)
     if (BOARD MATCHES NUCLEO-G07.+)
-        # Configure toolchain for NUCLEO-G071RB, or G070
         set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G07x/cmsis/arm-gcc/stm32g07xxx_flash.ld)
+    elseif (BOARD MATCHES NUCLEO-G03.+)
+        set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-G07x/cmsis/arm-gcc/stm32g03xxx_flash.ld)
     else()
         message(FATAL_ERROR "linker script for ${BOARD}")
     endif()

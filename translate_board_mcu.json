@@ -37,6 +37,7 @@
             "members":
             [
                 { "substring" : "NUCLEO-L031K6", "mcu" : "STM32L031K6Tx" },
+                { "substring" : "NUCLEO-G031K8", "mcu" : "STM32G031K8Tx" },
                 { "substring" : "SKiM980A", "mcu" : "STM32L151CBUxA" },
                 { "substring" : "SKiM881AXL", "mcu" : "STM32L081CZTx" },
                 { "substring" : "SKiM880B", "mcu" : "STM32L151CBUxA" },
