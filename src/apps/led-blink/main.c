@@ -31,7 +31,7 @@ int main( void )
     printf("\r\nstart\r\n");
 
     // Disables OFF mode - Enables lowest power mode (STOP)
-    //LpmSetOffMode( LPM_APPLI_ID, LPM_DISABLE );
+    LpmSetOffMode( LPM_APPLI_ID, LPM_DISABLE );
 
     mli = 0;
     while( 1 )

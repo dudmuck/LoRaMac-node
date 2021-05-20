@@ -298,6 +298,31 @@ void GpioMcuWrite( Gpio_t *obj, uint32_t value )
     }
 }
 
+void GpioMcuToggle( Gpio_t *obj )
+{
+    if( obj->pin < IOE_0 )
+    {
+        if( obj == NULL )
+        {
+            assert_param( LMN_STATUS_ERROR );
+        }
+
+        // Check if pin is not connected
+        if( obj->pin == NC )
+        {
+            return;
+        }
+        HAL_GPIO_TogglePin( obj->port, obj->pinIndex );
+    }
+    else
+    {
+#if defined( BOARD_IOE_EXT )
+        // IOExt Pin
+        GpioIoeToggle( obj );
+#endif
+    }
+}
+
 uint32_t GpioMcuRead( Gpio_t *obj )
 {
     if( obj->pin < IOE_0 )

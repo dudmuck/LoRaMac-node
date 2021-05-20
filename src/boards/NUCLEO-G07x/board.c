@@ -231,15 +231,7 @@ void BoardInitMcu( void )
 
 void BoardLowPowerHandler( void )
 {
-    __disable_irq( );
-    /*!
-     * If an interrupt has occurred after __disable_irq( ), it is kept pending 
-     * and cortex will not enter low power anyway
-     */
-
     LpmEnterLowPower( );
-
-    __enable_irq( );
 }
 
 void BoardCriticalSectionBegin( uint32_t *mask )
@@ -307,7 +299,7 @@ void LpmEnterStopMode( void)
 {
     CRITICAL_SECTION_BEGIN( );
 
-    BoardDeInitMcu( );
+    //BoardDeInitMcu( );
 
 #ifdef PWR_PVD_SUPPORT
     // Disable the Power Voltage Detector
@@ -315,14 +307,7 @@ void LpmEnterStopMode( void)
 #endif
 
     // Clear wake up flag
-    //SET_BIT( PWR->CR, PWR_CR_CWUF );
     WRITE_REG(PWR->SCR, PWR_SCR_CWUF);
-
-    // Enable Ultra low power mode
-    //HAL_PWREx_EnableUltraLowPower( );
-
-    // Enable the fast wake up from Ultra low power mode
-    //HAL_PWREx_EnableFastWakeUp( );
 
     CRITICAL_SECTION_END( );
 
@@ -335,6 +320,7 @@ void LpmEnterStopMode( void)
  */
 void LpmExitStopMode( void )
 {
+#if 0
     // Disable IRQ while the MCU is not running on HSI
     CRITICAL_SECTION_BEGIN( );
 
@@ -342,6 +328,7 @@ void LpmExitStopMode( void )
     BoardInitMcu( );
 
     CRITICAL_SECTION_END( );
+#endif /* if 0 */
 }
 
 /*!
