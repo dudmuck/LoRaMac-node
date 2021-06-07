@@ -82,15 +82,38 @@ int main( void )
 
     Radio.SetChannel( RF_FREQUENCY );
 
-    Radio.SetTxConfig( MODEM_LORA, TX_OUTPUT_POWER, 0, LORA_BANDWIDTH,
-                                   LORA_SPREADING_FACTOR, LORA_CODINGRATE,
-                                   LORA_PREAMBLE_LENGTH, LORA_FIX_LENGTH_PAYLOAD_ON,
-                                   true, 0, 0, LORA_IQ_INVERSION_ON, 3000 );
+    Radio.SetTxConfig(
+        /* RadioModems_t modem  */ MODEM_LORA,
+        /* int8_t power         */ TX_OUTPUT_POWER,
+        /* uint32_t fdev        */ 0,
+        /* uint32_t bandwidth   */ LORA_BANDWIDTH,
+        /* uint32_t datarate    */ LORA_SPREADING_FACTOR,
+        /* uint8_t coderate     */ LORA_CODINGRATE,
+        /* uint16_t preambleLen */ LORA_PREAMBLE_LENGTH,
+        /* bool fixLen          */ LORA_FIX_LENGTH_PAYLOAD_ON,
+        /* bool crcOn           */ true,
+        /* bool freqHopOn       */ 0,
+        /* uint8_t hopPeriod    */ 0,
+        /* bool iqInverted      */ LORA_IQ_INVERSION_ON,
+        /* uint32_t timeout     */ 3000
+    );
 
-    Radio.SetRxConfig( MODEM_LORA, LORA_BANDWIDTH, LORA_SPREADING_FACTOR,
-                                   LORA_CODINGRATE, 0, LORA_PREAMBLE_LENGTH,
-                                   LORA_SYMBOL_TIMEOUT, LORA_FIX_LENGTH_PAYLOAD_ON,
-                                   0, true, 0, 0, LORA_IQ_INVERSION_ON, true );
+    Radio.SetRxConfig(
+        /* RadioModems_t modem   */ MODEM_LORA,
+        /* uint32_t bandwidth    */ LORA_BANDWIDTH,
+        /* uint32_t datarate     */ LORA_SPREADING_FACTOR,
+        /* uint8_t coderate      */ LORA_CODINGRATE,
+        /* uint32_t bandwidthAfc */ 0,
+        /* uint16_t preambleLen  */ LORA_PREAMBLE_LENGTH,
+        /* uint16_t symbTimeout  */ LORA_SYMBOL_TIMEOUT, /* not used in rxContinuous */
+        /* bool fixLen           */ LORA_FIX_LENGTH_PAYLOAD_ON,
+        /* uint8_t payloadLen    */ 0,
+        /* bool crcOn            */ true,
+        /* bool freqHopOn        */ 0,
+        /* uint8_t hopPeriod     */ 0,
+        /* bool iqInverted       */ LORA_IQ_INVERSION_ON,
+        /* bool rxContinuous     */ true
+    );
 
     Radio.SetMaxPayloadLength( MODEM_LORA, BUFFER_SIZE );
 
