@@ -16,3 +16,6 @@
 [submodule "src/boards/mcu/stm32/STM32CubeL4"]
 	path = src/boards/mcu/stm32/STM32CubeL4
 	url = https://github.com/STMicroelectronics/STM32CubeL4
+[submodule "src/boards/mcu/stm32/STM32CubeF4"]
+	path = src/boards/mcu/stm32/STM32CubeF4
+	url = https://github.com/STMicroelectronics/STM32CubeF4

@@ -53,7 +53,7 @@ void HAL_GPIO_EXTI_Rising_Callback(uint16_t gpioPin)
 
     if( ( GpioIrq[callbackIndex] != NULL ) && ( GpioIrq[callbackIndex]->IrqHandler != NULL ) )
     {
-        if (GpioIrq[callbackIndex]->edge == RISING_EDGE || GpioIrq[callbackIndex]->edge == BOTH_EDGE)
+        if (GpioIrq[callbackIndex]->edge == GPIO_RISING_EDGE || GpioIrq[callbackIndex]->edge == GPIO_BOTH_EDGE)
             GpioIrq[callbackIndex]->IrqHandler( GpioIrq[callbackIndex]->Context );
     }
 }
@@ -73,7 +73,7 @@ void HAL_GPIO_EXTI_Falling_Callback(uint16_t gpioPin)
 
     if( ( GpioIrq[callbackIndex] != NULL ) && ( GpioIrq[callbackIndex]->IrqHandler != NULL ) )
     {
-        if (GpioIrq[callbackIndex]->edge == FALLING_EDGE || GpioIrq[callbackIndex]->edge == BOTH_EDGE)
+        if (GpioIrq[callbackIndex]->edge == GPIO_FALLING_EDGE || GpioIrq[callbackIndex]->edge == GPIO_BOTH_EDGE)
             GpioIrq[callbackIndex]->IrqHandler( GpioIrq[callbackIndex]->Context );
     }
 }
@@ -103,17 +103,17 @@ void GpioMcuSetInterrupt( Gpio_t *obj, IrqModes irqMode, IrqPriorities irqPriori
         if( irqMode == IRQ_RISING_EDGE )
         {
             GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
-            obj->edge = RISING_EDGE;
+            obj->edge = GPIO_RISING_EDGE;
         }
         else if( irqMode == IRQ_FALLING_EDGE )
         {
             GPIO_InitStructure.Mode = GPIO_MODE_IT_FALLING;
-            obj->edge = FALLING_EDGE;
+            obj->edge = GPIO_FALLING_EDGE;
         }
         else
         {
             GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING_FALLING;
-            obj->edge = BOTH_EDGE;
+            obj->edge = GPIO_BOTH_EDGE;
         }
 
         GPIO_InitStructure.Pull = obj->pull;

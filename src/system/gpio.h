@@ -70,10 +70,10 @@ typedef enum
 }PinTypes;
 
 typedef enum {
-    NONE_EDGE = 0,
-    RISING_EDGE,
-    FALLING_EDGE,
-    BOTH_EDGE
+    GPIO_NONE_EDGE = 0,
+    GPIO_RISING_EDGE,
+    GPIO_FALLING_EDGE,
+    GPIO_BOTH_EDGE
 } Edge;
 
 /*!

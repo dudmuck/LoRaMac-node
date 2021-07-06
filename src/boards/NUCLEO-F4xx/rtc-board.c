@@ -1,19 +1,19 @@
-#include <math.h>
-#include <time.h>
-#include "stm32g0xx.h"
-#include "utilities.h"
-#include "delay.h"
-#include "board.h"
-#include "timer.h"
-#include "systime.h"
-#include "gpio.h"
-#include "sysIrqHandlers.h"
+
+#include "stm32f4xx.h"
 #include "lpm-board.h"
+#include "systime.h"
 #include "rtc-board.h"
-#include "Legacy/stm32_hal_legacy.h"
 
 // sub-second number of bits
 #define N_PREDIV_S                                  10
+
+// RTC Time base in us
+#define USEC_NUMBER                                 1000000
+#define MSEC_NUMBER                                 ( USEC_NUMBER / 1000 )
+
+#define COMMON_FACTOR                               3
+#define CONV_NUMER                                  ( MSEC_NUMBER >> COMMON_FACTOR )
+#define CONV_DENOM                                  ( 1 << ( N_PREDIV_S - COMMON_FACTOR ) )
 
 // Synchronous prediv
 #define PREDIV_S                                    ( ( 1 << N_PREDIV_S ) - 1 )
@@ -21,10 +21,8 @@
 // Asynchronous prediv
 #define PREDIV_A                                    ( 1 << ( 15 - N_PREDIV_S ) ) - 1
 
-/*!
- * \brief Indicates if the RTC is already Initialized or not
- */
-static bool RtcInitialized = false;
+// MCU Wake Up Time
+#define MIN_ALARM_DELAY                             3 // in ticks
 
 /*!
  * \brief RTC Handle
@@ -38,7 +36,6 @@ static RTC_HandleTypeDef RtcHandle =
         .AsynchPrediv = 0,
         .SynchPrediv = 0,
         .OutPut = 0,
-        .OutPutRemap = RTC_OUTPUT_REMAP_NONE,
         .OutPutPolarity = 0,
         .OutPutType = 0
     },
@@ -47,107 +44,9 @@ static RTC_HandleTypeDef RtcHandle =
 };
 
 /*!
- * RTC timer context 
+ * \brief Indicates if the RTC is already Initialized or not
  */
-typedef struct
-{
-    uint32_t        Time;         // Reference time
-    RTC_TimeTypeDef CalendarTime; // Reference time in calendar format
-    RTC_DateTypeDef CalendarDate; // Reference date in calendar format
-}RtcTimerContext_t;
-
-
-
-/*!
- * Keep the value of the RTC timer when the RTC alarm is set
- * Set with the \ref RtcSetTimerContext function
- * Value is kept as a Reference to calculate alarm
- */
-static RtcTimerContext_t RtcTimerContext;
-
-#define RTC_CLOCK_SOURCE_LSE
-/**
-* @brief RTC MSP Initialization
-* This function configures the hardware resources used in this example
-* @param hrtc: RTC handle pointer
-* @retval None
-*/
-void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
-{
-  if(hrtc->Instance==RTC)
-  {
-  /* USER CODE BEGIN RTC_MspInit 0 */
-    RCC_OscInitTypeDef        RCC_OscInitStruct = {0};
-    RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct = {0};
-
-    /* Enables the PWR Clock and Enables access to the backup domain */
-    /* To enable access on RTC registers */
-    __HAL_RCC_PWR_CLK_ENABLE();
-    HAL_PWR_EnableBkUpAccess();
-
-    /* Get RTC clock configuration */
-    HAL_RCCEx_GetPeriphCLKConfig(&PeriphClkInitStruct);
-
-    /*In case of RTC clock already enable, make sure it's the good one */
-    if (PeriphClkInitStruct.RTCClockSelection == RCC_RTCCLKSOURCE_LSE)
-    {
-      /* Do nothing */
-    }
-    else
-    {
-      PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-
-      /* If selected source was previously the opposite source clock, first select none*/
-      if (PeriphClkInitStruct.RTCClockSelection != RCC_RTCCLKSOURCE_NONE)
-      {
-        PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_NONE;
-        if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-        {
-            assert_param( LMN_STATUS_ERROR );
-        }
-      }
-
-      /* Configure LSE/LSI as RTC clock source */
-#ifdef RTC_CLOCK_SOURCE_LSE
-      RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_LSE;
-      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-      RCC_OscInitStruct.LSEState = RCC_LSE_ON;
-      RCC_OscInitStruct.LSIState = RCC_LSI_OFF;
-#elif defined (RTC_CLOCK_SOURCE_LSI)
-      RCC_OscInitStruct.OscillatorType =  RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_LSE;
-      RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
-      RCC_OscInitStruct.LSIState = RCC_LSI_ON;
-      RCC_OscInitStruct.LSEState = RCC_LSE_OFF;
-#else
-#error Please select the RTC Clock source inside the main.h file
-#endif /*RTC_CLOCK_SOURCE_LSE*/
-
-      if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-      {
-            assert_param( LMN_STATUS_ERROR );
-      }
-
-      PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
-      if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
-      {
-            assert_param( LMN_STATUS_ERROR );
-      }
-    }
-
-  /* USER CODE END RTC_MspInit 0 */
-    /* Peripheral clock enable */
-    __HAL_RCC_RTC_ENABLE();
-    __HAL_RCC_RTCAPB_CLK_ENABLE();
-    /* RTC interrupt Init */
-    HAL_NVIC_SetPriority(RTC_TAMP_IRQn, 0, 0);
-    HAL_NVIC_EnableIRQ(RTC_TAMP_IRQn);
-  /* USER CODE BEGIN RTC_MspInit 1 */
-
-
-  /* USER CODE END RTC_MspInit 1 */
-  }
-
-}
+static bool RtcInitialized = false;
 
 void RtcInit( void )
 {
@@ -156,6 +55,8 @@ void RtcInit( void )
 
     if( RtcInitialized == false )
     {
+        __HAL_RCC_RTC_ENABLE( );
+
         RtcHandle.Instance            = RTC;
         RtcHandle.Init.HourFormat     = RTC_HOURFORMAT_24;
         RtcHandle.Init.AsynchPrediv   = PREDIV_A;  // RTC_ASYNCH_PREDIV;
@@ -163,7 +64,6 @@ void RtcInit( void )
         RtcHandle.Init.OutPut         = RTC_OUTPUT_DISABLE;
         RtcHandle.Init.OutPutPolarity = RTC_OUTPUT_POLARITY_HIGH;
         RtcHandle.Init.OutPutType     = RTC_OUTPUT_TYPE_OPENDRAIN;
-        RtcHandle.Init.OutPutPullUp   = RTC_OUTPUT_PULLUP_NONE;
         HAL_RTC_Init( &RtcHandle );
 
         date.Year                     = 0;
@@ -185,8 +85,8 @@ void RtcInit( void )
         // Enable Direct Read of the calendar registers (not through Shadow registers)
         HAL_RTCEx_EnableBypassShadow( &RtcHandle );
 
-        /*HAL_NVIC_SetPriority( RTC_TAMP_IRQn, 1, 0 );
-        HAL_NVIC_EnableIRQ( RTC_TAMP_IRQn );*/
+        HAL_NVIC_SetPriority( RTC_Alarm_IRQn, 1, 0 );
+        HAL_NVIC_EnableIRQ( RTC_Alarm_IRQn );
 
         // Init alarm.
         HAL_RTC_DeactivateAlarm( &RtcHandle, RTC_ALARM_A );
@@ -197,10 +97,64 @@ void RtcInit( void )
 }
 
 /*!
- * \brief Correction factors
+ * \brief converts time in ms to time in ticks
+ *
+ * \param[IN] milliseconds Time in milliseconds
+ * \retval returns time in timer ticks
  */
-#define  DAYS_IN_MONTH_CORRECTION_NORM              ( ( uint32_t )0x99AAA0 )
-#define  DAYS_IN_MONTH_CORRECTION_LEAP              ( ( uint32_t )0x445550 )
+uint32_t RtcMs2Tick( uint32_t milliseconds )
+{
+    return ( uint32_t )( ( ( ( uint64_t )milliseconds ) * CONV_DENOM ) / CONV_NUMER );
+}
+
+/*!
+ * \brief converts time in ticks to time in ms
+ *
+ * \param[IN] time in timer ticks
+ * \retval returns time in milliseconds
+ */
+uint32_t RtcTick2Ms( uint32_t tick )
+{
+    uint32_t seconds = tick >> N_PREDIV_S;
+
+    tick = tick & PREDIV_S;
+    return ( ( seconds * 1000 ) + ( ( tick * 1000 ) >> N_PREDIV_S ) );
+}
+
+void RtcStopAlarm( void )
+{
+    // Disable the Alarm A interrupt
+    HAL_RTC_DeactivateAlarm( &RtcHandle, RTC_ALARM_A );
+
+    // Clear RTC Alarm Flag
+    __HAL_RTC_ALARM_CLEAR_FLAG( &RtcHandle, RTC_FLAG_ALRAF );
+
+    // Clear the EXTI's line Flag for RTC Alarm
+    __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
+}
+
+
+/*!
+ * RTC timer context 
+ */
+typedef struct
+{
+    uint32_t        Time;         // Reference time
+    RTC_TimeTypeDef CalendarTime; // Reference time in calendar format
+    RTC_DateTypeDef CalendarDate; // Reference date in calendar format
+}RtcTimerContext_t;
+
+/*!
+ * Keep the value of the RTC timer when the RTC alarm is set
+ * Set with the \ref RtcSetTimerContext function
+ * Value is kept as a Reference to calculate alarm
+ */
+static RtcTimerContext_t RtcTimerContext;
+
+/*!
+ * \brief Calculates ceiling( X / N )
+ */
+#define DIVC( X, N )                                ( ( ( X ) + ( N ) -1 ) / ( N ) )
 
 /*!
  * \brief Days, Hours, Minutes and seconds
@@ -214,9 +168,10 @@ void RtcInit( void )
 #define HOURS_IN_1DAY                               ( ( uint32_t )   24U )
 
 /*!
- * \brief Calculates ceiling( X / N )
+ * \brief Correction factors
  */
-#define DIVC( X, N )                                ( ( ( X ) + ( N ) -1 ) / ( N ) )
+#define  DAYS_IN_MONTH_CORRECTION_NORM              ( ( uint32_t )0x99AAA0 )
+#define  DAYS_IN_MONTH_CORRECTION_LEAP              ( ( uint32_t )0x445550 )
 
 static uint64_t RtcGetCalendarValue( RTC_DateTypeDef* date, RTC_TimeTypeDef* time )
 {
@@ -267,63 +222,6 @@ uint32_t RtcSetTimerContext( void )
 }
 
 /*!
- * \brief Gets the RTC timer reference
- *
- * \param none
- * \retval timerValue In ticks
- */
-uint32_t RtcGetTimerContext( void )
-{
-    return RtcTimerContext.Time;
-}
-
-uint32_t RtcGetTimerValue( void )
-{
-    RTC_TimeTypeDef time;
-    RTC_DateTypeDef date;
-
-    uint32_t calendarValue = ( uint32_t )RtcGetCalendarValue( &date, &time );
-
-    return( calendarValue );
-}
-
-// RTC Time base in us
-#define USEC_NUMBER                                 1000000
-#define MSEC_NUMBER                                 ( USEC_NUMBER / 1000 )
-
-#define COMMON_FACTOR                               3
-#define CONV_NUMER                                  ( MSEC_NUMBER >> COMMON_FACTOR )
-#define CONV_DENOM                                  ( 1 << ( N_PREDIV_S - COMMON_FACTOR ) )
-
-/*!
- * \brief converts time in ms to time in ticks
- *
- * \param[IN] milliseconds Time in milliseconds
- * \retval returns time in timer ticks
- */
-uint32_t RtcMs2Tick( uint32_t milliseconds )
-{
-    return ( uint32_t )( ( ( ( uint64_t )milliseconds ) * CONV_DENOM ) / CONV_NUMER );
-}
-
-/*!
- * \brief converts time in ticks to time in ms
- *
- * \param[IN] time in timer ticks
- * \retval returns time in milliseconds
- */
-uint32_t RtcTick2Ms( uint32_t tick )
-{
-    uint32_t seconds = tick >> N_PREDIV_S;
-
-    tick = tick & PREDIV_S;
-    return ( ( seconds * 1000 ) + ( ( tick * 1000 ) >> N_PREDIV_S ) );
-}
-
-// MCU Wake Up Time
-#define MIN_ALARM_DELAY                             3 // in ticks
-
-/*!
  * \brief returns the wake up time in ticks
  *
  * \retval wake up time in ticks
@@ -331,103 +229,6 @@ uint32_t RtcTick2Ms( uint32_t tick )
 uint32_t RtcGetMinimumTimeout( void )
 {
     return( MIN_ALARM_DELAY );
-}
-
-HAL_StatusTypeDef _HAL_RTC_DeactivateAlarm(RTC_HandleTypeDef *hrtc, uint32_t Alarm)
-{
-  //uint32_t tickstart;
-  unsigned cnt = 0;
-
-  /* Check the parameters */
-  assert_param(IS_RTC_ALARM(Alarm));
-
-  /* Process Locked */
-  __HAL_LOCK(hrtc);
-
-  hrtc->State = HAL_RTC_STATE_BUSY;
-
-  /* Disable the write protection for RTC registers */
-  __HAL_RTC_WRITEPROTECTION_DISABLE(hrtc);
-
-  if(Alarm == RTC_ALARM_A)
-  {
-    /* AlarmA */
-    __HAL_RTC_ALARMA_DISABLE(hrtc);
-
-    /* In case of interrupt mode is used, the interrupt source must disabled */
-    __HAL_RTC_ALARM_DISABLE_IT(hrtc, RTC_IT_ALRA);
-
-    //tickstart = HAL_GetTick();
-
-    /* Wait till RTC ALRxWF flag is set and if Time out is reached exit */
-    while(__HAL_RTC_ALARM_GET_FLAG(hrtc, RTC_FLAG_ALRAWF) == 0U)
-    {
-      //if( (HAL_GetTick()  - tickstart ) > RTC_TIMEOUT_VALUE)
-      if(cnt++ > 5000000)
-      {
-        /* Enable the write protection for RTC registers */
-        __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
-
-        hrtc->State = HAL_RTC_STATE_TIMEOUT;
-
-        /* Process Unlocked */
-        __HAL_UNLOCK(hrtc);
-
-        return HAL_TIMEOUT;
-      }
-    }
-  }
-  else
-  {
-    /* AlarmB */
-    __HAL_RTC_ALARMB_DISABLE(hrtc);
-
-    /* In case of interrupt mode is used, the interrupt source must disabled */
-    __HAL_RTC_ALARM_DISABLE_IT(hrtc,RTC_IT_ALRB);
-
-    //tickstart = HAL_GetTick();
-
-    /* Wait till RTC ALRxWF flag is set and if Time out is reached exit */
-    while(__HAL_RTC_ALARM_GET_FLAG(hrtc, RTC_FLAG_ALRBWF) == 0U)
-    {
-      //if((HAL_GetTick() - tickstart ) > RTC_TIMEOUT_VALUE)
-      if(cnt++ > 5000000)
-      {
-        /* Enable the write protection for RTC registers */
-        __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
-
-        hrtc->State = HAL_RTC_STATE_TIMEOUT;
-
-        /* Process Unlocked */
-        __HAL_UNLOCK(hrtc);
-
-        return HAL_TIMEOUT;
-      }
-    }
-  }
-
-  /* Enable the write protection for RTC registers */
-  __HAL_RTC_WRITEPROTECTION_ENABLE(hrtc);
-
-  hrtc->State = HAL_RTC_STATE_READY;
-
-  /* Process Unlocked */
-  __HAL_UNLOCK(hrtc);
-
-  return HAL_OK;
-}
-
-void RtcStopAlarm( void )
-{
-    //check_tick();
-    // Disable the Alarm A interrupt
-    _HAL_RTC_DeactivateAlarm( &RtcHandle, RTC_ALARM_A );
-
-    // Clear RTC Alarm Flag
-    __HAL_RTC_ALARM_CLEAR_FLAG( &RtcHandle, RTC_FLAG_ALRAF );
-
-    // Clear the EXTI's line Flag for RTC Alarm
-    //__HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
 }
 
 uint32_t RtcGetTimerElapsedTime( void )
@@ -544,19 +345,18 @@ void RtcStartAlarm( uint32_t timeout )
     }
 
     /* Set RTC_AlarmStructure with calculated values*/
-    RtcAlarm.AlarmTime.Hours          = rtcAlarmHours;
-    RtcAlarm.AlarmTime.Minutes        = rtcAlarmMinutes;
-    RtcAlarm.AlarmTime.Seconds        = rtcAlarmSeconds;
     RtcAlarm.AlarmTime.SubSeconds     = PREDIV_S - rtcAlarmSubSeconds;
+    RtcAlarm.AlarmSubSecondMask       = ALARM_SUBSECOND_MASK; 
+    RtcAlarm.AlarmTime.Seconds        = rtcAlarmSeconds;
+    RtcAlarm.AlarmTime.Minutes        = rtcAlarmMinutes;
+    RtcAlarm.AlarmTime.Hours          = rtcAlarmHours;
+    RtcAlarm.AlarmDateWeekDay         = ( uint8_t )rtcAlarmDays;
+    RtcAlarm.AlarmTime.TimeFormat     = time.TimeFormat;
+    RtcAlarm.AlarmDateWeekDaySel      = RTC_ALARMDATEWEEKDAYSEL_DATE; 
+    RtcAlarm.AlarmMask                = RTC_ALARMMASK_NONE;
+    RtcAlarm.Alarm                    = RTC_ALARM_A;
     RtcAlarm.AlarmTime.DayLightSaving = RTC_DAYLIGHTSAVING_NONE;
     RtcAlarm.AlarmTime.StoreOperation = RTC_STOREOPERATION_RESET;
-    RtcAlarm.AlarmMask                = RTC_ALARMMASK_NONE;
-    RtcAlarm.AlarmSubSecondMask       = ALARM_SUBSECOND_MASK; 
-    RtcAlarm.AlarmDateWeekDaySel      = RTC_ALARMDATEWEEKDAYSEL_DATE; 
-    RtcAlarm.AlarmDateWeekDay         = ( uint8_t )rtcAlarmDays;
-    RtcAlarm.Alarm                    = RTC_ALARM_A;
-
-    RtcAlarm.AlarmTime.TimeFormat     = time.TimeFormat;
 
     // Set RTC_Alarm
     HAL_RTC_SetAlarm_IT( &RtcHandle, &RtcAlarm, RTC_FORMAT_BIN );
@@ -587,7 +387,7 @@ void RtcSetAlarm( uint32_t timeout )
 /*!
  * \brief RTC IRQ Handler of the RTC Alarm
  */
-void RTC_TAMP_IRQHandler( void )
+void RTC_Alarm_IRQHandler( void )
 {
     RTC_HandleTypeDef* hrtc = &RtcHandle;
 
@@ -595,7 +395,7 @@ void RTC_TAMP_IRQHandler( void )
     LpmSetStopMode( LPM_RTC_ID, LPM_ENABLE );
 
     // Clear the EXTI's line Flag for RTC Alarm
-    //__HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
+    __HAL_RTC_ALARM_EXTI_CLEAR_FLAG( );
 
     // Gets the AlarmA interrupt source enable status
     if( __HAL_RTC_ALARM_GET_IT_SOURCE( hrtc, RTC_IT_ALRA ) != RESET )
@@ -627,3 +427,23 @@ void HAL_RTC_AlarmAEventCallback( RTC_HandleTypeDef *hrtc )
         TimerIrqHandler( );
 }
 
+/*!
+ * \brief Gets the RTC timer reference
+ *
+ * \param none
+ * \retval timerValue In ticks
+ */
+uint32_t RtcGetTimerContext( void )
+{
+    return RtcTimerContext.Time;
+}
+
+uint32_t RtcGetTimerValue( void )
+{
+    RTC_TimeTypeDef time;
+    RTC_DateTypeDef date;
+
+    uint32_t calendarValue = ( uint32_t )RtcGetCalendarValue( &date, &time );
+
+    return( calendarValue );
+}

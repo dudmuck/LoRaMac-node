@@ -111,6 +111,17 @@ elseif(BOARD STREQUAL NucleoL476)
     # Build platform specific board implementation
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NucleoL476)
 
+elseif(BOARD MATCHES NUCLEO-F4.+)
+    if (BOARD MATCHES NUCLEO-F446.+)
+        set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-F4xx/cmsis/arm-gcc/stm32f446_flash.ld)
+    else()
+        message(FATAL_ERROR "linker script for ${BOARD}")
+    endif()
+    include(stm32f4)
+
+    # Build platform specific board implementation
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/boards/NUCLEO-F4xx)
+
 elseif(BOARD STREQUAL SAMR34)
     # Configure toolchain for SAMR34
     set(LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/boards/mcu/saml21/saml21b/gcc/gcc/saml21j18b_flash.ld)

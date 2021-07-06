@@ -124,36 +124,6 @@ static void BoardUnusedIoInit( void )
     HAL_DBGMCU_EnableDBGStandbyMode( );
 }
 
-void SystemClockReConfig( void )
-{
-    __HAL_RCC_PWR_CLK_ENABLE( );
-    //__HAL_PWR_VOLTAGESCALING_CONFIG( PWR_REGULATOR_VOLTAGE_SCALE1 );
-
-    // Enable HSI
-    __HAL_RCC_HSI_CONFIG( RCC_HSI_ON );
-
-    // Wait till HSI is ready
-    while( __HAL_RCC_GET_FLAG( RCC_FLAG_HSIRDY ) == RESET )
-    {
-    }
-
-    // Enable PLL
-    __HAL_RCC_PLL_ENABLE( );
-
-    // Wait till PLL is ready
-    while( __HAL_RCC_GET_FLAG( RCC_FLAG_PLLRDY ) == RESET )
-    {
-    }
-
-    // Select PLL as system clock source
-    __HAL_RCC_SYSCLK_CONFIG ( RCC_SYSCLKSOURCE_PLLCLK );
-
-    // Wait till PLL is used as system clock source
-    while( __HAL_RCC_GET_SYSCLK_SOURCE( ) != RCC_SYSCLKSOURCE_STATUS_PLLCLK )
-    {
-    }
-}
-
 void BoardInitMcu( void )
 {
     if( McuInitialized == false )
@@ -193,7 +163,7 @@ void BoardInitMcu( void )
     }
     else
     {
-        SystemClockReConfig( );
+        SystemClockConfig();
     }
 
 #if defined( SX1261MBXBAS ) || defined( SX1262MBXCAS ) || defined( SX1262MBXDAS )
@@ -290,6 +260,9 @@ void BoardDeInitMcu( void )
 #endif
 }
 
+volatile uint8_t clockStopped;
+extern volatile uint8_t pendingTimerEvent;
+
 /**
   * \brief Enters Low Power Stop Mode
   *
@@ -297,19 +270,18 @@ void BoardDeInitMcu( void )
   */
 void LpmEnterStopMode( void)
 {
-    CRITICAL_SECTION_BEGIN( );
-
-    //BoardDeInitMcu( );
+    clockStopped = 1;
+    BoardDeInitMcu( );
 
 #ifdef PWR_PVD_SUPPORT
     // Disable the Power Voltage Detector
     HAL_PWR_DisablePVD( );
 #endif
 
+    HAL_SuspendTick();
+
     // Clear wake up flag
     WRITE_REG(PWR->SCR, PWR_SCR_CWUF);
-
-    CRITICAL_SECTION_END( );
 
     // Enter Stop Mode
     HAL_PWR_EnterSTOPMode( PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI );
@@ -320,15 +292,15 @@ void LpmEnterStopMode( void)
  */
 void LpmExitStopMode( void )
 {
-#if 0
-    // Disable IRQ while the MCU is not running on HSI
-    CRITICAL_SECTION_BEGIN( );
-
-    // Initilizes the peripherals
     BoardInitMcu( );
+    clockStopped = 0;
 
-    CRITICAL_SECTION_END( );
-#endif /* if 0 */
+    HAL_ResumeTick();
+
+    if (pendingTimerEvent) {
+        TimerIrqHandler( );
+        pendingTimerEvent = 0;
+    }
 }
 
 /*!

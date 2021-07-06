@@ -124,6 +124,9 @@ extern "C"
 #define UART_TX                                     PA_2
 #define UART_RX                                     PA_3
 
+/* on-board LED if SPI (aka radio) isnt used */
+#define ON_BOARD_LED                                PA_5
+
 #ifdef __cplusplus
 }
 #endif
