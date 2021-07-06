@@ -14,6 +14,7 @@ added boards:
     -DBOARD="NUCLEO-G071RB" 
     -DBOARD="NUCLEO-G070RB" 
     -DBOARD="NUCLEO-G031K8"
+    -DBOARD="NUCLEO-F446RE"
     
 already existing radio chips:
 
@@ -40,6 +41,11 @@ if you're using STM32L0xx MCU:
 
     in directory src/boards/mcu/stm32:
     git submodule update --init STM32CubeG0
+
+**or**, if you're using STM32F4xx MCU:
+
+    in directory src/boards/mcu/stm32:
+    git submodule update --init STM32CubeF4
 
 if you're using LR1110 radio chip:
 
